@@ -1,0 +1,11 @@
+node_id,node_name,node_type,importance
+1,Server-A,server,high
+2,Server-B,server,medium
+3,Router-1,router,high
+4,Router-2,router,medium
+5,Client-1,client,low
+6,Client-2,client,low
+7,Client-3,client,low
+8,Database,database,high
+9,Firewall,security,high
+10,LoadBalancer,network,medium
