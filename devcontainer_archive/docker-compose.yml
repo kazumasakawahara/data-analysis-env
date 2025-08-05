@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  dev:
+    image: python:3.11-slim
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    ports:
+      - "8501:8501"
+    command: /bin/bash -c "apt-get update && apt-get install -y graphviz && pip install -r requirements.txt && tail -f /dev/null"
+    environment:
+      - PYTHONPATH=/workspace

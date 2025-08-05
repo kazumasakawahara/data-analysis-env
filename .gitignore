@@ -1,68 +1,38 @@
+# Virtual environment
+venv/
+env/
+ENV/
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
 
-# Jupyter Notebook
-.ipynb_checkpoints
-*.ipynb_checkpoints/
-
-# データファイル（プライバシー保護）
-data/raw/*
-data/processed/*
-data/temp/*
-# READMEは残す
-!data/*/README.md
-!data/README.md
-
-# 環境変数（APIキーなど）
+# Environment variables
 .env
-.env.local
-.env.*.local
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# OS
+# Temporary files
+data/temp/*
+!data/temp/.gitkeep
+
+# Output files (keep directory structure but not files)
+output/*
+!output/.gitkeep
+
+# OS files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
-# ログファイル
-*.log
-logs/
+# Jupyter Notebook
+.ipynb_checkpoints/
 
-# 一時ファイル
-*.tmp
-*.temp
-*.bak
-
-# Streamlit
-.streamlit/secrets.toml
-
-# Docker（ローカルビルドのキャッシュ）
-.docker/
-
-# 大きなファイル
-*.csv
-*.xlsx
-*.xls
-*.json
-# サンプルデータは許可
-!sample_data/*.csv
-!sample_data/*.json
+# pytest
+.pytest_cache/
