@@ -15,6 +15,18 @@ import plotly.express as px
 from pathlib import Path
 import json
 
+# 日本語フォント設定をインポート
+try:
+    import japanese_font_setup
+except ImportError:
+    print("警告: japanese_font_setup.pyが見つかりません")
+
+# カスタムカラー設定をインポート
+try:
+    import custom_colors
+except ImportError:
+    print("警告: custom_colors.pyが見つかりません")
+
 st.set_page_config(
     page_title="統合データ分析ワークフロー",
     page_icon="📊",
@@ -47,7 +59,12 @@ if workflow_step == "1. データ読み込み":
     
     # 既存ファイルから選択
     data_dir = Path("data/raw")
+    if not data_dir.exists():
+        data_dir.mkdir(parents=True, exist_ok=True)
+    
     files = list(data_dir.glob("*.csv")) + list(data_dir.glob("*.xlsx"))
+    
+    selected_file = None  # 初期化
     
     if files:
         selected_file = st.selectbox(
@@ -78,9 +95,11 @@ if workflow_step == "1. データ読み込み":
                     
             except Exception as e:
                 st.error(f"ファイル読み込みエラー: {str(e)}")
+    else:
+        st.info("既存のデータファイルがありません。新規ファイルをアップロードしてください。")
     
     # 新規アップロード
-    if selected_file == "新規アップロード" or not files:
+    if not files or (selected_file and selected_file == "新規アップロード"):
         uploaded_file = st.file_uploader(
             "ファイルをアップロード",
             type=['csv', 'xlsx']
@@ -316,8 +335,16 @@ elif workflow_step == "3. データ分析":
                     st.dataframe(grouped)
                     
                     # 可視化
+                    # カスタムカラーを適用
+                    color_map = None
+                    if 'custom_colors' in globals():
+                        color_map = custom_colors.get_color_mapping(grouped[group_col])
+                    
                     fig = px.bar(grouped, x=group_col, y=agg_col, 
-                                title=f"{group_col}別の{agg_col}（{agg_func}）")
+                                title=f"{group_col}別の{agg_col}（{agg_func}）",
+                                color=group_col,
+                                color_discrete_map=color_map if color_map else None)
+                    fig.update_layout(showlegend=False)
                     st.plotly_chart(fig)
                     
                     # 結果を保存
@@ -453,8 +480,20 @@ elif workflow_step == "4. 可視化":
                 if color_col == "なし":
                     fig = px.scatter(df, x=x_col, y=y_col, title=f"{x_col} vs {y_col}")
                 else:
+                    # カスタムカラーを適用
+                    color_map = None
+                    if 'custom_colors' in globals():
+                        color_map = custom_colors.get_color_mapping(df[color_col])
+                    
                     fig = px.scatter(df, x=x_col, y=y_col, color=color_col,
-                                   title=f"{x_col} vs {y_col} (色: {color_col})")
+                                   title=f"{x_col} vs {y_col} (色: {color_col})",
+                                   color_discrete_map=color_map if color_map else None)
+                    
+                    # マーカーのサイズと境界線を設定
+                    fig.update_traces(marker=dict(
+                        size=10,
+                        line=dict(width=1, color='DarkSlateGrey')
+                    ))
                 
                 st.plotly_chart(fig)
         
@@ -479,7 +518,16 @@ elif workflow_step == "4. 可視化":
                 agg_df = df.groupby(x_col)[y_col].mean().reset_index()
                 agg_df = agg_df.sort_values(y_col, ascending=False)
                 
-                fig = px.bar(agg_df, x=x_col, y=y_col, title=f"{x_col}別の{y_col}平均")
+                # カスタムカラーを適用
+                color_map = None
+                if 'custom_colors' in globals():
+                    color_map = custom_colors.get_color_mapping(agg_df[x_col])
+                
+                fig = px.bar(agg_df, x=x_col, y=y_col, 
+                            title=f"{x_col}別の{y_col}平均",
+                            color=x_col,
+                            color_discrete_map=color_map if color_map else None)
+                fig.update_layout(showlegend=False)
                 st.plotly_chart(fig)
         
         elif viz_type == "ヒートマップ":
@@ -509,7 +557,15 @@ elif workflow_step == "4. 可視化":
                     if x_col == "なし":
                         fig = px.box(df, y=y_col, title=f"{y_col}の分布")
                     else:
-                        fig = px.box(df, x=x_col, y=y_col, title=f"{x_col}別の{y_col}分布")
+                        # カスタムカラーを適用
+                        color_map = None
+                        if 'custom_colors' in globals():
+                            color_map = custom_colors.get_color_mapping(df[x_col])
+                        
+                        fig = px.box(df, x=x_col, y=y_col, 
+                                    title=f"{x_col}別の{y_col}分布",
+                                    color=x_col,
+                                    color_discrete_map=color_map if color_map else None)
                 else:
                     fig = px.box(df, y=y_col, title=f"{y_col}の分布")
                 
@@ -614,8 +670,13 @@ elif workflow_step == "5. レポート作成":
                         df.to_csv(save_path, index=False)
                     elif save_format == "xlsx":
                         df.to_excel(save_path, index=False)
-                    else:
-                        df.to_parquet(save_path, index=False)
+                    else:  # parquet
+                        try:
+                            df.to_parquet(save_path, index=False)
+                        except ImportError:
+                            st.error("pyarrowがインストールされていません。parquet形式で保存するには 'pip install pyarrow' を実行してください。")
+                        except Exception as e:
+                            st.error(f"保存エラー: {str(e)}")
                     
                     st.success(f"✅ データを保存しました: {save_path}")
         else:
